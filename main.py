@@ -5,7 +5,7 @@ PLAYER = 0
 AI = 1 #clean up
 FIRSTMOVE=AI
 
-#test git change 
+#test git change cleanup test
 
 class MillGame():
     def __init__(self,gameState=None,moves=[],turn=0):
