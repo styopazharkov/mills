@@ -7,13 +7,8 @@ FIRSTMOVE=AI
 
 class MillGame():
     def __init__(self,gameState=None,moves=[],turn=0):
-        if gameState==None:
-            self.gameState={}
-            for sq in range(3):
-                for th in range(8):
-                    self.gameState[(sq,th)]="."
-        else:
-            self.gameState=gameState
+        
+        self.gameState=gameState
         self.pastMoves=moves
         self.turn=turn
         self.connections={}  #STATIC creates a dictionary with what points are connected to what
