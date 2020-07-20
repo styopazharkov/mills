@@ -304,7 +304,7 @@ class PvAIGame():
 class AIvAIGame():
     def __init__(self,firstmove=0):
         self.handler=UIhandler()
-        self.ai0=GameAI() #REMOVE hardcode part
+        self.ai0=GameAI(2,10,10,10,1) #REMOVE hardcode part
         self.ai1=GameAI() #REMOVE hardcode part
         gameState={}
         for sq in range(3):
@@ -341,12 +341,12 @@ class AIvAIGame():
                 print()
 
 class GameAI():
-    def __init__(self, mode="optimized"): #mode: 0, 1, 2... , optimized, INSERT manual
-        self.mode=mode
-        self.depth=1
-        self.score_double=1
-        self.score_mill=1
-        self.score_piece=1
+    def __init__(self, depthMode="optimized", score_double=10, score_mill=10, score_piece=10, score_conn=1): #mode: 0, 1, 2... , time_optimized
+        self.mode=depthMode
+        self.score_double=score_double
+        self.score_mill=score_mill
+        self.score_piece=score_piece
+        self.score_conn=score_conn
 
     def getMove(self, game, possMoves, turn):
         depth=self.getDepth(game, possMoves)
@@ -386,8 +386,6 @@ class GameAI():
                     return 3
                 else:
                     return 2
-
-
 
     def minimax(self, game, depth, turn, possMoves, alpha, beta): #returns minimax score with alpha-beta pruning
         if game.isWin1(possMoves):
@@ -429,7 +427,7 @@ class GameAI():
                 score += self.score_mill
             elif mill[0]==1:
                 score -= self.score_mill
-        for triple in game.triples:
+        for triple in game.triples: #add to score for doubles
             count0=0
             count1=0
             for spot in triple:
@@ -441,10 +439,21 @@ class GameAI():
                 score+=self.score_double
             elif (count0, count1)==(0,2):
                 score-=self.score_double
+
+        for spot0 in game.pieces[0]: #add to score for open neighbor spots 0
+            for neighbor in game.connections[spot0]:
+                if game.gameState[neighbor]==".":
+                    score+=self.score_conn
+
+        for spot1 in game.pieces[1]: #add to score for open neighbor spots 1
+            for neighbor in game.connections[spot1]:
+                if game.gameState[neighbor]==".":
+                    score-=self.score_conn
+
         return score
 
 AIvAIGame()
-# TODO: reduce clutter, optimize heuristic, optimize depth function, make gui, improve AI based on paper
+# TODO: reduce clutter, optimize heuristic (?), optimize depth function, make gui
 
 
 
