@@ -6,8 +6,8 @@ AI = 1 #clean up
 FIRSTMOVE=AI
 
 class MillGame():
-    def __init__(self,gameState=None,moves=[],turn=0):
-        
+    #MAYBE swith 0 and 1 to magic numbers PLAYER1, PLAYER2
+    def __init__(self,gameState,moves=[],turn=0):
         self.gameState=gameState
         self.pastMoves=moves
         self.turn=turn
@@ -51,10 +51,9 @@ class MillGame():
             self.gameState[move[2]]=self.turn
             self.gameState[move[3]]="."
 
-        #update properties, MAYBE could be optimized so you dont have to recalculate
         self.pastMoves.append(move)
-        self.mills=self.getMills(self.gameState)
-        self.pieces=[self.getPieces(PLAYER),self.getPieces(AI)]
+        self.mills=self.getMills(self.gameState) #MAYBE could be optimized so you dont have to recalculate
+        self.pieces=[self.getPieces(PLAYER),self.getPieces(AI)] #SHOULD be optimized so you dont have to recalculate
         self.turn=self.enemy(self.turn)
         
     def getRemovables(self, turn): #given a player, returns all enemy pieces that can be removed
@@ -67,16 +66,15 @@ class MillGame():
                     addIt=False
             if addIt:
                 removables.append(enemyPiece)
-        if not removables:
-            return enemyPieces
-        else:
-            return removables 
+        if removables:
+            return removables
+        return enemyPieces
 
     def enemy(self,turn): #returns enemy
-        if turn==AI:
-            return PLAYER
+        if turn==0:
+            return 1
         else:
-            return AI
+            return 0
 
     def getPieces(self,turn): #returns a list of spots where each player has pieces
         pieces=[]
@@ -94,17 +92,14 @@ class MillGame():
                 mills.append([val, triple])
         return mills
 
-    def isWinPlayer(self,possMoves):
-        if len(self.pastMoves)>=18 and self.turn==AI:
-            if len(self.pieces[AI])<=2 or possMoves=={}:
-                return True
-        
+    def isWin0(self,possMoves): #checks if player 0 has won
+        if self.turn==1 and len(self.pastMoves)>=18 and (len(self.pieces[1])<=2 or possMoves=={}):
+            return True
         return False
 
-    def isWinAI(self, possMoves):
-        if len(self.pastMoves)>=18 and self.turn==PLAYER:
-            if len(self.pieces[PLAYER])<=2 or possMoves=={}:
-                return True
+    def isWin1(self, possMoves): #checks if player 1 has won
+        if self.turn==0 and len(self.pastMoves)>=18 and (len(self.pieces[0])<=2 or possMoves=={}):
+            return True
         return False
             
     def getPossMoves(self): #moves of the form [type, start (sq,th), end(if)(sq,th),remove(sq,th)]
@@ -115,14 +110,13 @@ class MillGame():
                     if self.gameState[(sq,th)]==".":
                         temp_gameState=self.gameState.copy()
                         temp_gameState[(sq,th)]=self.turn
-
                         if len(self.getMills(temp_gameState))>len(self.mills):
                             for removable in self.getRemovables(self.turn):
                                 possMoves.append(["placer",(sq,th),removable])
                         else:
                             possMoves.append(["place",(sq,th)])
         else: #moving phase 
-            # INSERT option for variation where you can move anywhere after 3 pieces left
+            # MAYBE insert option for variation where you can move anywhere after 3 pieces left
             for sq in range(3):
                 for th in range(8):
                     if self.gameState[(sq,th)]==self.turn:
@@ -191,7 +185,7 @@ class GameUI():
             for move in possMovesList:
                 possMoves[str(move)]=move
 
-            if self.game.isWinAI(possMoves):
+            if self.game.isWin1(possMoves):
                 if self.mode!="auto":
                     print("AI1 has won the Game (1s)")
                 else:
@@ -200,7 +194,7 @@ class GameUI():
                 self.result=1
                 playing=False
                 break
-            elif self.game.isWinPlayer(possMoves):
+            elif self.game.isWin0(possMoves):
                 self.result=0
                 if self.mode!="auto":
                     print("AI2 have won the Game (0s)") 
@@ -320,11 +314,11 @@ class GameAI():
                     minScore=temp_score
         return bestMove
     
-    def minimax(self, game, depth, turn, possMoves, alpha, beta): #returns minimax score
+    def minimax(self, game, depth, turn, possMoves, alpha, beta): #returns minimax score with alpha-beta pruning
         #INSERT TERMINAL NODE
-        if game.isWinAI(possMoves):
+        if game.isWin1(possMoves):
             return -1000000
-        if game.isWinPlayer(possMoves):
+        if game.isWin0(possMoves):
             return 1000000
         if depth == 0:
             score=self.getScore(game, turn)
