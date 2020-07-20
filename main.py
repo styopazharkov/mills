@@ -101,14 +101,14 @@ class MillGame():
 
     def isWinPlayer(self,possMoves):
         if len(self.pastMoves)>=18 and self.turn==AI:
-            if len(self.pieces[AI])<=2 or possMoves=={}:
+            if len(self.pieces[AI])<=2 or not possMoves:
                 return True
         
         return False
 
     def isWinAI(self, possMoves):
         if len(self.pastMoves)>=18 and self.turn==PLAYER:
-            if len(self.pieces[PLAYER])<=2 or possMoves=={}:
+            if len(self.pieces[PLAYER])<=2 or not possMoves:
                 return True
         return False
             
