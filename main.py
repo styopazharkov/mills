@@ -304,8 +304,8 @@ class PvAIGame():
 class AIvAIGame():
     def __init__(self,firstmove=0):
         self.handler=UIhandler()
-        self.ai0=GameAI(2,10,10,10,1) #REMOVE hardcode part
-        self.ai1=GameAI() #REMOVE hardcode part
+        self.ai0=GameAI(2) #REMOVE hardcode part
+        self.ai1=GameAI(0) #REMOVE hardcode part
         gameState={}
         for sq in range(3):
             for th in range(8):
@@ -452,7 +452,16 @@ class GameAI():
 
         return score
 
-AIvAIGame()
+
+
+
+
+if __name__ == "__main__":
+    # uncomment one of the following to play:
+    # PvPGame()
+    # PvAIGame() 
+    # AIvAIGame()
+    pass
 # TODO: reduce clutter, optimize heuristic (?), optimize depth function, make gui
 
 
