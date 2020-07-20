@@ -93,12 +93,12 @@ class MillGame():
         return mills
 
     def isWin0(self,possMoves): #checks if player 0 has won
-        if self.turn==1 and len(self.pastMoves)>=18 and (len(self.pieces[1])<=2 or possMoves=={}):
+        if (len(self.pastMoves)>=18 and len(self.pieces[1])<=2 or not possMoves):
             return True
         return False
 
     def isWin1(self, possMoves): #checks if player 1 has won
-        if self.turn==0 and len(self.pastMoves)>=18 and (len(self.pieces[0])<=2 or possMoves=={}):
+        if (len(self.pastMoves)>=18 and len(self.pieces[0])<=2) or not possMoves:
             return True
         return False
             
@@ -135,285 +135,317 @@ class MillGame():
                                     possMoves.append(["move",(sq,th),neighbor])
         return possMoves
 
+class UIhandler():
+    def askForMove(self,game: MillGame, possMoves):
+        print("Player "+str(game.turn)+" to move, please enter command:")
+        possMovesList=possMoves
+        possMovesDict={}
+        for move in possMovesList:
+            possMovesDict[str(move)]=move
+        inp=input()
+        if inp in possMovesDict:
+            return possMovesDict[inp]
+        elif inp=="move":
+            print("not a feature yet")
+            return self.askForMove(game, possMoves)
+        elif inp=="poss":
+            print(possMovesList)
+            return self.askForMove(game, possMoves)
+        elif inp=="moves":
+            print(game.pastMoves)
+            return self.askForMove(game, possMoves)
+        elif inp=="mills":
+            print(game.mills)
+            return self.askForMove(game, possMoves)
+        elif inp=="pieces":
+            print(game.pieces)
+            return self.askForMove(game, possMoves)
+        elif inp=="end":
+            print("bye")
+            return "end"
+        elif inp=="help":
+            print("INSERT help and rules here")
+            return self.askForMove(game, possMoves)
+        elif inp=="new":
+            #INSERT a new game function here
+            print("not a feature yet")
+            return self.askForMove(game, possMoves)
+        else:
+            print("please enter a valid command")
+            return self.askForMove(game, possMoves)
 
-class GameUI():
-    def __init__(self, AIDEPTH1,SCOREDOUBLE1,SCOREMILL1,SCOREPIECE1, AIDEPTH2,SCOREDOUBLE2,SCOREMILL2,SCOREPIECE2, mode="manual"):
-        
-        self.mode=mode
+    def showIntro(self):
+
+        print("Wellcome to Mills, enter 'new' for a new game, 'end' to quit, 'help' for instructions")
+        inp=input()
+        while inp not in ["new", "end"]:
+            if inp=="help":
+                print("INSERT help and rules here")
+            else:
+                print("please enter valid command")
+            inp=input()
+        if inp=="new":
+            return "play"
+        elif inp=="end":
+            print("bye")
+            return "end"
+
+    def showboard(self, game: MillGame): #prints gameboard
+
+        for th in [7,0,1]:
+            print(game.gameState[0,th], end="     ")
+        print()
+        print(end="  ")
+        for th in [7,0,1]:
+            print(game.gameState[1,th], end="   ")
+        print()
+        print(end="    ")
+        for th in [7,0,1]:
+            print(game.gameState[2,th], end=" ")
+        print()
+
+        for sq in [0,1,2]:
+            print(game.gameState[sq,6], end=" ")
+        print(end="  ")
+        for sq in [2,1,0]:
+            print(game.gameState[sq,2], end=" ")
+        print()
+
+        print(end="    ")
+        for th in [5,4,3]:
+            print(game.gameState[2,th], end=" ")
+        print()
+        print(end="  ")
+        for th in [5,4,3]:
+            print(game.gameState[1,th], end="   ")
+        print()
+        for th in [5,4,3]:
+            print(game.gameState[0,th], end="     ")
+        print()
+
+class PvPGame():
+    def __init__(self,firstmove=0):
+        self.handler=UIhandler()
         gameState={}
         for sq in range(3):
             for th in range(8):
                 gameState[(sq,th)]="."
-        # gameState[(0,1)]=PLAYER
-        # gameState[(0,2)]=PLAYER
-        # gameState[(0,4)]=PLAYER
-        # gameState[(1,2)]=PLAYER
-        # gameState[(2,2)]=AI
-        # gameState[(2,5)]=AI
-        # gameState[(2,6)]=AI
-        self.game=MillGame(gameState,[], FIRSTMOVE)
-        self.ai=GameAI(AIDEPTH1,SCOREDOUBLE1,SCOREMILL1,SCOREPIECE1) #1s, AI
-        self.ai2=GameAI(AIDEPTH2,SCOREDOUBLE2,SCOREMILL2,SCOREPIECE2) #0s, PLAYER
-        
-        if self.mode=="auto":
-            #print("playing automatically: ", end="")
+        self.game=MillGame(gameState,[], firstmove)
+        if self.handler.showIntro()=="play":
             self.play()
-        else:
-            print("Wellcome to Mills, enter 'new' for a new game, 'end' to quit, 'help' for instructions")
-            inp=input()
-            while inp not in ["new", "end"]:
-                if inp=="help":
-                    print("INSERT help and rules here")
-                else:
-                    print("please enter valid command")
-                inp=input()
-            if inp=="new":
-                self.play()
-            elif inp=="end":
-                print("bye")
 
     def play(self):
-        #print("New Game of Mills")
-        
         playing=True
-        self.showboard()
+        self.handler.showboard(self.game)
         while playing:
-            if self.mode!="auto":
-                print("Player "+str(self.game.turn)+" to move")
-            possMoves={}
-            possMovesList=self.game.getPossMoves()
-            for move in possMovesList:
-                possMoves[str(move)]=move
-
-            if self.game.isWin1(possMoves):
-                if self.mode!="auto":
-                    print("AI1 has won the Game (1s)")
-                else:
-                    pass##
-                    #print("1")##
-                self.result=1
-                playing=False
+            possMoves=self.game.getPossMoves()
+            if self.game.isWin0(possMoves): #checks p0 wins
+                print("Player 0 has won the Game in "+ str(len(self.game.pastMoves)) + " moves")
+                self.result, playing=0, False
                 break
-            elif self.game.isWin0(possMoves):
-                self.result=0
-                if self.mode!="auto":
-                    print("AI2 have won the Game (0s)") 
-                else:
-                    pass#
-                    #print("0")##
-                playing=False
+            if self.game.isWin1(possMoves): #checks p1 wins
+                print("Player 1 has won the Game in "+ str(len(self.game.pastMoves)) + " moves")
+                self.result, playing=1, False
                 break
-            elif len(self.game.pastMoves)>200:
-                self.result=0.5
-                if self.mode!="auto":
-                    print("its a draw")
-                else:
-                    pass##
-                    #print("0.5")##
+            elif len(self.game.pastMoves)>200: #draw
+                print("its a draw, 200 move limit exceeded")
+                self.result, playing=0.5, False
+                break
+
+            command=self.handler.askForMove(self.game, possMoves)
+            if command=="end":
                 playing=False
-            #start ai2
-            if self.game.turn==AI: #AI 1s turn (1s)
-                self.game.makeMove(self.ai.getMove(self.game, possMovesList, self.game.turn))
-                self.showboard()
-                if self.mode!="auto":
-                    print(self.ai.getScore(self.game, self.game.turn), end=" ")##
-                    print(self.ai2.getScore(self.game, self.game.turn))##
-            #end ai2
-            elif self.game.turn==PLAYER: #AI 2s turn (0s)
-                self.game.makeMove(self.ai2.getMove(self.game, possMovesList, self.game.turn))
-                self.showboard()
-                if self.mode!="auto":
-                    print(self.ai.getScore(self.game, self.game.turn), end=" ") ##
-                    print(self.ai2.getScore(self.game, self.game.turn)) ##
-            else: #Players turn
-                inp=input()
-                if inp=="poss":
-                    for key in possMoves.keys():
-                        print(key, end=" ")
-                    print()
-                elif inp=="moves":
-                    print(self.game.pastMoves)
-                elif inp=="mills":
-                    print(self.game.mills)
-                elif inp=="pieces":
-                    print(self.game.pieces)
-                elif inp=="end":
-                    print("bye")
-                    playing=False
-                elif inp=="help":
-                    print("INSERT help and rules here")
-                elif inp=="new":
-                    #INSERT a new game function here
-                    print("not a feature yet")
-                elif inp in possMoves:
-                    self.game.makeMove(possMoves[inp])
-                    self.showboard()
-                    print(self.ai.getScore(self.game))##
-                else:
-                    print("please enter valid command")
+            else:
+                self.game.makeMove(command)
+                self.handler.showboard(self.game)
 
-    def showboard(self): #prints gameboard
-        if self.mode=="auto":
-            return
-        for th in [7,0,1]:
-            print(self.game.gameState[0,th], end="     ")
-        print()
-        print(end="  ")
-        for th in [7,0,1]:
-            print(self.game.gameState[1,th], end="   ")
-        print()
-        print(end="    ")
-        for th in [7,0,1]:
-            print(self.game.gameState[2,th], end=" ")
-        print()
+class PvAIGame():
+    #PLAYER = 0
+    #AI = 1
+    def __init__(self,firstmove=0):
+        self.handler=UIhandler()
+        self.ai=GameAI() #REMOVE hardcode part
+        gameState={}
+        for sq in range(3):
+            for th in range(8):
+                gameState[(sq,th)]="."
+        self.game=MillGame(gameState,[], firstmove)
+        if self.handler.showIntro()=="play":
+            self.play()
 
-        for sq in [0,1,2]:
-            print(self.game.gameState[sq,6], end=" ")
-        print(end="  ")
-        for sq in [2,1,0]:
-            print(self.game.gameState[sq,2], end=" ")
-        print()
+    def play(self):
+        playing=True
+        self.handler.showboard(self.game)
+        while playing:
+            possMoves=self.game.getPossMoves()
+            if self.game.isWin0(possMoves): #checks p0 wins
+                print("You have won the Game in "+ str(len(self.game.pastMoves)) + " moves")
+                self.result, playing=0, False
+                break
+            if self.game.isWin1(possMoves): #checks p1 wins
+                print("AI has won the Game in "+ str(len(self.game.pastMoves)) + " moves")
+                self.result, playing=1, False
+                break
+            elif len(self.game.pastMoves)>200: #draw
+                print("its a draw, 200 move limit exceeded")
+                self.result, playing=0.5, False
+                break
+            if self.game.turn==1: #If AI turn, AI =1 always
+                self.game.makeMove(self.ai.getMove(self.game, possMoves, 1))
+                self.handler.showboard(self.game)
+                continue
+            command=self.handler.askForMove(self.game, possMoves) # If player turn
+            if command=="end":
+                playing=False
+            else:
+                self.game.makeMove(command)
+                self.handler.showboard(self.game)
 
-        print(end="    ")
-        for th in [5,4,3]:
-            print(self.game.gameState[2,th], end=" ")
-        print()
-        print(end="  ")
-        for th in [5,4,3]:
-            print(self.game.gameState[1,th], end="   ")
-        print()
-        for th in [5,4,3]:
-            print(self.game.gameState[0,th], end="     ")
-        print()
+class AIvAIGame():
+    def __init__(self,firstmove=0):
+        self.handler=UIhandler()
+        self.ai0=GameAI() #REMOVE hardcode part
+        self.ai1=GameAI() #REMOVE hardcode part
+        gameState={}
+        for sq in range(3):
+            for th in range(8):
+                gameState[(sq,th)]="."
+        self.game=MillGame(gameState,[], firstmove)
+        self.play()
 
+    def play(self):
+        playing=True
+        self.handler.showboard(self.game)
+        print()
+        while playing:
+            possMoves=self.game.getPossMoves()
+            if self.game.isWin0(possMoves): #checks p0 wins
+                print("AI0 won the Game in "+ str(len(self.game.pastMoves)) + " moves")
+                self.result, playing=0, False
+                break
+            if self.game.isWin1(possMoves): #checks p1 wins
+                print("AI1 has won the Game in "+ str(len(self.game.pastMoves)) + " moves")
+                self.result, playing=1, False
+                break
+            elif len(self.game.pastMoves)>200: #draw
+                print("its a draw, 200 move limit exceeded")
+                self.result, playing=0.5, False
+                break
+            if self.game.turn==0: #If AI0 turn 
+                self.game.makeMove(self.ai0.getMove(self.game, possMoves, 0))
+                self.handler.showboard(self.game)
+                print()
+            else: #if AI1 turn
+                self.game.makeMove(self.ai1.getMove(self.game, possMoves, 1))
+                self.handler.showboard(self.game)
+                print()
 
 class GameAI():
-    def __init__(self, depth, score_double, score_mill, score_piece):
-        self.depth=depth
-        self.score_double=score_double
-        self.score_mill=score_mill
-        self.score_piece=score_piece
+    def __init__(self, mode="optimized"): #mode: 0, 1, 2... , optimized, INSERT manual
+        self.mode=mode
+        self.depth=1
+        self.score_double=1
+        self.score_mill=1
+        self.score_piece=1
+
     def getMove(self, game, possMoves, turn):
-        move=random.choice(possMoves)
+        depth=self.getDepth(game, possMoves)
+        move=possMoves.pop(random.randint(0,len(possMoves)-1))
         temp_game=deepcopy(game)
         temp_game.makeMove(move)
-        minScore=self.minimax(temp_game, self.depth, temp_game.turn, temp_game.getPossMoves(), -100000, 100000)
+        bestScore=self.minimax(temp_game, depth, temp_game.turn, temp_game.getPossMoves(), -10000, 10000)
         bestMove=move
-         #+infinity
         for move in possMoves:
             temp_game=deepcopy(game)
             temp_game.makeMove(move)
-            temp_score=self.minimax(temp_game, self.depth, temp_game.turn, temp_game.getPossMoves(), -100000, 100000)
-            if turn==AI:
-                if temp_score<minScore:
+            temp_score=self.minimax(temp_game, depth, temp_game.turn, temp_game.getPossMoves(), -10000, 10000)
+            if turn==0:
+                if temp_score>bestScore:
                     bestMove=move
-                    minScore=temp_score
-            elif turn==PLAYER:
-                if temp_score>minScore:
+                    bestScore=temp_score
+            elif turn==1:
+                if temp_score<bestScore:
                     bestMove=move
-                    minScore=temp_score
+                    bestScore=temp_score
         return bestMove
-    
+
+    def getDepth(self, game, possMoves): #TODO: optimize this depth function
+        if self.mode in {0,1,2,3,4}:
+            return self.mode
+        elif self.mode=="optimized":
+            gameLength=len(game.pastMoves)
+            if gameLength==0:
+                return 0
+            elif gameLength<10:
+                return 2
+            elif gameLength<18:
+                return 3
+            else:
+                numMoves=len(possMoves)
+                if numMoves<10:
+                    return 3
+                else:
+                    return 2
+
+
+
     def minimax(self, game, depth, turn, possMoves, alpha, beta): #returns minimax score with alpha-beta pruning
-        #INSERT TERMINAL NODE
         if game.isWin1(possMoves):
-            return -1000000
+            return -10000
         if game.isWin0(possMoves):
-            return 1000000
+            return 10000
         if depth == 0:
             score=self.getScore(game, turn)
             return score
-        if turn==PLAYER:
+        if turn==0:
             score = -100000
             for move in possMoves:
                 temp_game=deepcopy(game)
                 temp_game.makeMove(move)
-                score = max(score, self.minimax(temp_game, depth - 1, AI, temp_game.getPossMoves(), alpha, beta))
+                score = max(score, self.minimax(temp_game, depth - 1, 1, temp_game.getPossMoves(), alpha, beta))
                 alpha=max(alpha,score)
                 if alpha>=beta:
                     break
             return score
-        else: #AI
+        else: #turn=1
             score = 100000
             for move in possMoves:
                 temp_game=deepcopy(game)
                 temp_game.makeMove(move)
-                score = min(score, self.minimax(temp_game, depth-1, PLAYER, temp_game.getPossMoves(),alpha,beta))
+                score = min(score, self.minimax(temp_game, depth-1, 0, temp_game.getPossMoves(),alpha,beta))
                 beta=min(beta,score)
                 if beta <= alpha:
                     break
             return score
     
-    def getScore(self, game, turn): #returns heuristic score
-        
+    def getScore(self, game, turn): #TODO: OPTIMIZE heuristic #returns heuristic score, 0s want positive, 1s want negative; turn not used, but could be in a different heuristic
         score=0
-        aiNum=len(game.pieces[AI])
-        playerNum=len(game.pieces[PLAYER])
-        score -= (aiNum-playerNum)*self.score_piece #number of pieces INSERT to increase value of piece lead if there are less peices.
+        num0=len(game.pieces[0])
+        num1=len(game.pieces[1])
+
+        score += (num0-num1)*self.score_piece #number of pieces INSERT to increase value of piece lead if there are less peices.
         for mill in game.mills: #adds to score for mills
-            if mill[0]==AI:
-                score -= self.score_mill
-            elif mill[0]==PLAYER:
+            if mill[0]==0:
                 score += self.score_mill
+            elif mill[0]==1:
+                score -= self.score_mill
         for triple in game.triples:
-            countPlayer=0
-            countAI=0
+            count0=0
+            count1=0
             for spot in triple:
-                if game.gameState[spot]==AI:
-                    countAI+=1
-                elif game.gameState[spot]==PLAYER:
-                    countPlayer+=1
-            if (countPlayer, countAI)==(0,2):
-                score-=self.score_double
-            elif (countPlayer, countAI)==(2,0):
+                if game.gameState[spot]==0:
+                    count0+=1
+                elif game.gameState[spot]==1:
+                    count1+=1
+            if (count0, count1)==(2,0):
                 score+=self.score_double
+            elif (count0, count1)==(0,2):
+                score-=self.score_double
         return score
 
+AIvAIGame()
+# TODO: reduce clutter, optimize heuristic, optimize depth function, make gui, improve AI based on paper
 
-# TODO: reduce clutter, check runtime, balance score, make gui
 
-def runtest(depth1,double1,mill1,piece1,depth2,double2,mill2,piece2): #wins out of 100
-    print("starting runtest . . .")
-    # AIDEPTH1 = depth1 #AI1 1s, AI, negatives, first, highr game sum
-    # SCOREDOUBLE1 = double1
-    # SCOREMILL1 = mill1
-    # SCOREPIECE1 = piece1
 
-    # AIDEPTH2 = depth2 #AI2 0s, PLAYER, positives, second, lower game sum
-    # SCOREDOUBLE2 = double2
-    # SCOREMILL2 = mill2
-    # SCOREPIECE2 = piece2
-    result=0
-    for i in range(50):
-        result+=GameUI(depth1, double1, mill1, piece1, depth2, double2, mill2, piece2, "auto").result
-        if (i+1)%10==0:
-            print(str(result)+ " out of " + str(i+1))
-    result2=0
-    print("switch")
-    for i in range(50):
-        result2+=GameUI(depth2, double2, mill2, piece2, depth1, double1, mill1, piece1, "auto").result
-        if (i+1)%10==0:
-            print(str(i+1-result2)+ " out of " + str(i+1))
-    print(result+50-result2)
-    return result+result2
-    print("End of runtest")
-
-GameUI(2,1,1,1,1,1,1,1)
-#runtest(2,1,1,1,2,2,3,15)
-#assuming that pice is more valuable than mill and mill is more valuable than piece; no value change throughout the game (MAYBE change this)
-# depth=1
-# double=1
-# factor1=1
-# factor2=1
-# for _ in range(10):
-#     _factor1=1.26**random.randint(0,10)
-#     _factor2=1.26**random.randint(0,10)
-#     mill=double*factor1
-#     piece=mill*factor2
-#     _mill=double*_factor1
-#     _piece=_mill*_factor2
-#     print((double,mill,piece,_mill,_piece))
-#     if runtest(depth,double,mill,piece,depth,double,_mill,_piece)<40:
-#         factor1, factor2 = _factor1, _factor2
-#         print("success")
  
