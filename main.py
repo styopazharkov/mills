@@ -1,9 +1,8 @@
 from copy import deepcopy
 import random
+import pygame, sys
 
-PLAYER = 0
-AI = 1 #clean up
-FIRSTMOVE=AI
+
 
 class MillGame():
     #MAYBE swith 0 and 1 to magic numbers PLAYER1, PLAYER2
@@ -53,7 +52,7 @@ class MillGame():
 
         self.pastMoves.append(move)
         self.mills=self.getMills(self.gameState) #MAYBE could be optimized so you dont have to recalculate
-        self.pieces=[self.getPieces(PLAYER),self.getPieces(AI)] #SHOULD be optimized so you dont have to recalculate
+        self.pieces=[self.getPieces(0),self.getPieces(1)] #SHOULD be optimized so you dont have to recalculate
         self.turn=self.enemy(self.turn)
         
     def getRemovables(self, turn): #given a player, returns all enemy pieces that can be removed
@@ -452,17 +451,319 @@ class GameAI():
 
         return score
 
+class GUI():
+    def __init__(self):
+        pygame.init()
+        self.clock = pygame.time.Clock()
+        self.unit=60
+        self.WIN_WIDTH = 800
+        self.WIN_HEIGHT = 600
+        self.winCenter=(self.WIN_WIDTH//2,self.WIN_HEIGHT//2)
+        self.spotDict=self.makeSpotDict()
+        self.win = pygame.display.set_mode((self.WIN_WIDTH, self.WIN_HEIGHT))
+        pygame.display.set_caption("Nine Mens Morris")
+        self.introLoop()
+        pygame.quit()
+        sys.exit()
 
+    def makeSpotDict(self): #creates dict with all the spots
+        dic={}
+        for sq in range(3):
+            for th in range(8):
+                if th==0:
+                    dic[(sq,th)]=(self.winCenter[0],self.winCenter[1]-self.unit*(3-sq))
+                elif th==1:
+                    dic[(sq,th)]=(self.winCenter[0]+self.unit*(3-sq),self.winCenter[1]-self.unit*(3-sq))
+                elif th==2:
+                    dic[(sq,th)]=(self.winCenter[0]+self.unit*(3-sq),self.winCenter[1])
+                elif th==3:
+                    dic[(sq,th)]=(self.winCenter[0]+self.unit*(3-sq),self.winCenter[1]+self.unit*(3-sq))
+                elif th==4:
+                    dic[(sq,th)]=(self.winCenter[0],self.winCenter[1]+self.unit*(3-sq))
+                elif th==5:
+                    dic[(sq,th)]=(self.winCenter[0]-self.unit*(3-sq),self.winCenter[1]+self.unit*(3-sq))
+                elif th==6:
+                    dic[(sq,th)]=(self.winCenter[0]-self.unit*(3-sq),self.winCenter[1])
+                elif th==7:
+                    dic[(sq,th)]=(self.winCenter[0]-self.unit*(3-sq),self.winCenter[1]-self.unit*(3-sq))
+        return dic
 
+    def introLoop(self): #loop for intro
+        gameOn = True 
+        while gameOn:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            self.drawIntro()
+
+            pygame.display.update()
+            self.clock.tick(60)
+        return
+    
+    def drawIntro(self): #draws the intro screen
+        self.win.fill((255,255,255))
+        largeText = pygame.font.Font('freesansbold.ttf',45)
+        TextSurf, TextRect = self.text_objects("Welcome to Nine Mens Morris", largeText, (0,0,0))
+        TextRect.center = (self.WIN_WIDTH//2,self.WIN_HEIGHT*3//8)
+        self.win.blit(TextSurf,TextRect)
+        self.createButton("PvP", 110,350,100,50, (170,170,170), (140,140,140), 20, self.playLoop)
+        self.createButton("PvAI", 270,350,100,50, (170,170,170), (140,140,140), 20, self.playLoop)
+        self.createButton("AIvP", 430,350,100,50, (170,170,170), (140,140,140), 20, self.playLoop)
+        self.createButton("AIvAI", 590,350,100,50, (170,170,170), (140,140,140), 20, self.playLoop)
+            
+    def createButton(self, text, left, top, width, height, inactiveColor, activeColor, fontSize, action=None): #creates a clickable button
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        font = pygame.font.Font('freesansbold.ttf', fontSize)
+        if left<mouse[0]<left+width and top<mouse[1]<top+height:
+            pygame.draw.rect(self.win, activeColor, (left,top,width,height)) #if mouse is over button
+            if click[0]==1 and action!=None:
+                self.mode=text
+                action()
+        else:
+            pygame.draw.rect(self.win, inactiveColor, (left,top,width,height))  #if mouse not over button
+        TextSurf, TextRect = self.text_objects(text, font, (0,0,0)) #draws button text
+        TextRect.center = (left+width//2, top+height//2)
+        self.win.blit(TextSurf,TextRect)
+    
+    def text_objects(self, text, font, color): #creates a pair for text objects
+        textSurface = font.render(text, True, color)
+        return textSurface, textSurface.get_rect()
+    
+    def startBlankGame(self): #starts a blank game
+        gameState={}
+        for sq in range(3):
+            for th in range(8):
+                gameState[(sq,th)]="."
+        self.game=MillGame(gameState,[])
+
+    def waitForMoveLoop(self, possMoves): #SHOULD return the move that the human wants to make
+
+        def incrementA(a,colorTrend): #changes the possmovecolor
+            if colorTrend=="+":
+                if a>200:
+                    return a, "-"
+                else:
+                    return a+1.5, "+"
+            else:
+                if a<102:
+                    return a, "+"
+                else:
+                    return a-1.5, "-"
+        
+        def getSpot(mouse, possMoves, index):
+            for possMove in possMoves:
+                location=self.spotDict[possMove[index]]
+                if -self.unit//2<location[0]-mouse[0]<self.unit//2 and -self.unit//2<location[1]-mouse[1]<self.unit//2:
+                    return possMove
+            return False
+#188, 25, 255
+        def drawPossSpots(a, spots):
+            self.win.fill((255,255,255))
+            self.drawBoard()
+            self.drawPieces()
+            for spot in spots:
+                occupant=self.game.gameState[spot]
+                if occupant==0: #red, 0
+                    pygame.draw.circle(self.win, (255,a,a), self.spotDict[spot], 10)
+                elif occupant==1: # blue, 1
+                    pygame.draw.circle(self.win, (a,a,255), self.spotDict[spot], 10) 
+                elif self.game.turn==0: # occupant= ".", turn=0, red
+                    pygame.draw.circle(self.win, (a,100,100), self.spotDict[spot], 10)
+                else:  # occupant= ".", turn=1, blue
+                    pygame.draw.circle(self.win, (100,100,a), self.spotDict[spot], 10)
+
+        def waitForPlacerMove(placed, possMoves): #returns 'placer' move if selected first placed spot forms a mill
+            a, colorTrend=100, "+"
+            possMoves=[move for move in possMoves if move[1]==placed]
+            possSpots=[move[2] for move in possMoves]
+            self.game.gameState[placed]=self.game.turn
+            self.mills=self.game.getMills(self.game.gameState)
+            self.game.pieces=[self.game.getPieces(0),self.game.getPieces(1)] #SHOULD be optimized so you dont have to recalculate
+            while True: #wait loop
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse = pygame.mouse.get_pos()
+                        spot=getSpot(mouse, possMoves, 2)
+                        if spot:
+                            return spot
+                
+                drawPossSpots(a, possSpots)
+                pygame.display.update()
+                self.clock.tick(60)
+                a, colorTrend = incrementA(a, colorTrend)
+
+        def waitForPlaceMove(possMoves): #waits until a move is made that places a peice. returns the move is it is 'place' type. calls waitForPl
+            a, colorTrend=100, "+"
+            possSpots=[move[1] for move in possMoves]
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse = pygame.mouse.get_pos()
+                        spot=getSpot(mouse, possMoves, 1)
+                        if spot:
+                            if spot[0]=="placer":
+                                return waitForPlacerMove(spot[1], possMoves)
+                            else:
+                                return spot
+
+                drawPossSpots(a, possSpots)
+                pygame.display.update()
+                self.clock.tick(60)
+                a, colorTrend = incrementA(a, colorTrend)
+
+        def waitForMoveMoveStart(possMoves): #waits until a start spot is selected during the moving phase
+            a, colorTrend=100, "+"
+            possSpots=[move[1] for move in possMoves]
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse = pygame.mouse.get_pos()
+                        spot=getSpot(mouse, possMoves, 1)
+                        if spot:
+                            return waitForMoveMoveEnd(spot[1], possMoves)
+
+                drawPossSpots(a, possSpots)
+                pygame.display.update()
+                self.clock.tick(60)
+                a, colorTrend = incrementA(a, colorTrend)
+
+        def waitForMoveMoveEnd(start, possMoves): #waits until an end spot is selected during movng phase
+            a, colorTrend=100, "+"
+            possMoves=[move for move in possMoves if move[1]==start]
+            possSpots=[move[2] for move in possMoves]
+
+            self.game.gameState[start]="." #NEED to add so that start spot is 'selected' somehow
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse = pygame.mouse.get_pos()
+                        spot=getSpot(mouse, possMoves, 2)
+                        if spot:
+                            if spot[0]=="mover":
+                                return waitForMoverMove(spot[2], possMoves)
+                            else:
+                                return spot
+
+                drawPossSpots(a, possSpots)
+                pygame.display.update()
+                self.clock.tick(60)
+                a, colorTrend = incrementA(a, colorTrend)
+
+        def waitForMoverMove(end, possMoves):  #waits until removable is selected if a mill is formed by a move move
+            a, colorTrend=100, "+"
+            possMoves=[move for move in possMoves if move[2]==end]
+            possSpots=[move[3] for move in possMoves]
+
+            self.game.gameState[end]=self.game.turn #makes sure 
+            self.mills=self.game.getMills(self.game.gameState)
+            self.game.pieces=[self.game.getPieces(0),self.game.getPieces(1)]
+
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse = pygame.mouse.get_pos()
+                        spot=getSpot(mouse, possMoves, 3)
+                        if spot:
+                            return spot
+
+                drawPossSpots(a, possSpots)
+                pygame.display.update()
+                self.clock.tick(60)
+                a, colorTrend = incrementA(a, colorTrend)
+
+        if len(self.game.pastMoves)<18:
+            return waitForPlaceMove(possMoves)
+        else:
+            return waitForMoveMoveStart(possMoves)
+
+    def playLoop(self):
+        self.startBlankGame()
+        self.ai=GameAI(0)
+        gameOn=True
+        while gameOn:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            self.win.fill((255,255,255))
+            self.drawBoard()
+            self.drawPieces()
+
+            pygame.display.update()
+            self.clock.tick(60)
+
+            possMoves= self.game.getPossMoves()
+            if self.game.isWin0(possMoves): #checks p0 wins #NEED neater iswin
+                while True:
+                    for event in pygame.event.get(): 
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
+            elif self.game.isWin1(possMoves): #checks p1 wins #NEED neater iswin
+                while True:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
+            elif len(self.game.pastMoves)>200: #draw #NEED neater isdraw
+                while True:
+                    for event in pygame.event.get(): ##
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
+            if self.game.turn==0:
+                if self.mode in {"AIvAI", "AIvP"}:
+                    self.game.makeMove(self.ai.getMove(self.game, possMoves, self.game.turn))
+                else:
+                    self.game.makeMove(self.waitForMoveLoop(possMoves))
+            else: #turn =1
+                if self.mode in {"AIvAI", "PvAI"}:
+                    self.game.makeMove(self.ai.getMove(self.game, possMoves, self.game.turn))
+                else:
+                    self.game.makeMove(self.waitForMoveLoop(possMoves))
+   
+    def drawBoard(self):
+        for sq in range(3): #draws spots
+            for th in range(8):
+                 pygame.draw.circle(self.win, (100,100,100), self.spotDict[(sq,th)], 20)
+
+        for triple in self.game.triples: #draws edges
+            end1=self.spotDict[triple[0]]
+            end2=self.spotDict[triple[2]]
+            pygame.draw.line(self.win, (100,100,100), end1, end2, 14)
+
+    def drawPieces(self):
+        for piece in self.game.pieces[0]: #red player 0
+            pygame.draw.circle(self.win, (255,0,0), self.spotDict[piece], 14)
+
+        for piece in self.game.pieces[1]: #blue. player 1
+            pygame.draw.circle(self.win, (0,0,255), self.spotDict[piece], 14)
 
 
 if __name__ == "__main__":
     # uncomment one of the following to play:
     # PvPGame()
     # PvAIGame() 
-    # AIvAIGame()
+    GUI()
     pass
-# TODO: reduce clutter, optimize heuristic (?), optimize depth function, make gui
+# TODO: reduce clutter, optimize heuristic (?), optimize depth function, add gui announcements
 
 
 
