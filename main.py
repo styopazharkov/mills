@@ -1,6 +1,7 @@
 from copy import deepcopy
 import random
 import pygame, sys
+from collections import defaultdict
 
 
 
@@ -33,7 +34,7 @@ class MillGame():
             self.triples.append([(sq,th) for th in [5,6,7]])
         for th in [0,2,4,6]:#^^^ #triples of the form [(sq,th),(sq,th),(sq,th)]
             self.triples.append([(sq,th) for sq in [0,1,2]])
-        self.mills=self.getMills(self.gameState)
+        self.mills=self.getMills(self.gameState) #mills of the form [turn, [(sq,th),(sq,th),(sq,th)]]
         self.pieces=[self.getPieces(0),self.getPieces(1)]
 
     def makeMove(self, move): #actually makes a move
@@ -133,211 +134,6 @@ class MillGame():
                                 if not formsMill:
                                     possMoves.append(["move",(sq,th),neighbor])
         return possMoves
-
-class UIhandler():
-    def askForMove(self,game: MillGame, possMoves):
-        print("Player "+str(game.turn)+" to move, please enter command:")
-        possMovesList=possMoves
-        possMovesDict={}
-        for move in possMovesList:
-            possMovesDict[str(move)]=move
-        inp=input()
-        if inp in possMovesDict:
-            return possMovesDict[inp]
-        elif inp=="move":
-            print("not a feature yet")
-            return self.askForMove(game, possMoves)
-        elif inp=="poss":
-            print(possMovesList)
-            return self.askForMove(game, possMoves)
-        elif inp=="moves":
-            print(game.pastMoves)
-            return self.askForMove(game, possMoves)
-        elif inp=="mills":
-            print(game.mills)
-            return self.askForMove(game, possMoves)
-        elif inp=="pieces":
-            print(game.pieces)
-            return self.askForMove(game, possMoves)
-        elif inp=="end":
-            print("bye")
-            return "end"
-        elif inp=="help":
-            print("INSERT help and rules here")
-            return self.askForMove(game, possMoves)
-        elif inp=="new":
-            #INSERT a new game function here
-            print("not a feature yet")
-            return self.askForMove(game, possMoves)
-        else:
-            print("please enter a valid command")
-            return self.askForMove(game, possMoves)
-
-    def showIntro(self):
-
-        print("Wellcome to Mills, enter 'new' for a new game, 'end' to quit, 'help' for instructions")
-        inp=input()
-        while inp not in ["new", "end"]:
-            if inp=="help":
-                print("INSERT help and rules here")
-            else:
-                print("please enter valid command")
-            inp=input()
-        if inp=="new":
-            return "play"
-        elif inp=="end":
-            print("bye")
-            return "end"
-
-    def showboard(self, game: MillGame): #prints gameboard
-
-        for th in [7,0,1]:
-            print(game.gameState[0,th], end="     ")
-        print()
-        print(end="  ")
-        for th in [7,0,1]:
-            print(game.gameState[1,th], end="   ")
-        print()
-        print(end="    ")
-        for th in [7,0,1]:
-            print(game.gameState[2,th], end=" ")
-        print()
-
-        for sq in [0,1,2]:
-            print(game.gameState[sq,6], end=" ")
-        print(end="  ")
-        for sq in [2,1,0]:
-            print(game.gameState[sq,2], end=" ")
-        print()
-
-        print(end="    ")
-        for th in [5,4,3]:
-            print(game.gameState[2,th], end=" ")
-        print()
-        print(end="  ")
-        for th in [5,4,3]:
-            print(game.gameState[1,th], end="   ")
-        print()
-        for th in [5,4,3]:
-            print(game.gameState[0,th], end="     ")
-        print()
-
-class PvPGame():
-    def __init__(self,firstmove=0):
-        self.handler=UIhandler()
-        gameState={}
-        for sq in range(3):
-            for th in range(8):
-                gameState[(sq,th)]="."
-        self.game=MillGame(gameState,[], firstmove)
-        if self.handler.showIntro()=="play":
-            self.play()
-
-    def play(self):
-        playing=True
-        self.handler.showboard(self.game)
-        while playing:
-            possMoves=self.game.getPossMoves()
-            if self.game.isWin0(possMoves): #checks p0 wins
-                print("Player 0 has won the Game in "+ str(len(self.game.pastMoves)) + " moves")
-                self.result, playing=0, False
-                break
-            if self.game.isWin1(possMoves): #checks p1 wins
-                print("Player 1 has won the Game in "+ str(len(self.game.pastMoves)) + " moves")
-                self.result, playing=1, False
-                break
-            elif len(self.game.pastMoves)>200: #draw
-                print("its a draw, 200 move limit exceeded")
-                self.result, playing=0.5, False
-                break
-
-            command=self.handler.askForMove(self.game, possMoves)
-            if command=="end":
-                playing=False
-            else:
-                self.game.makeMove(command)
-                self.handler.showboard(self.game)
-
-class PvAIGame():
-    #PLAYER = 0
-    #AI = 1
-    def __init__(self,firstmove=0):
-        self.handler=UIhandler()
-        self.ai=GameAI() #REMOVE hardcode part
-        gameState={}
-        for sq in range(3):
-            for th in range(8):
-                gameState[(sq,th)]="."
-        self.game=MillGame(gameState,[], firstmove)
-        if self.handler.showIntro()=="play":
-            self.play()
-
-    def play(self):
-        playing=True
-        self.handler.showboard(self.game)
-        while playing:
-            possMoves=self.game.getPossMoves()
-            if self.game.isWin0(possMoves): #checks p0 wins
-                print("You have won the Game in "+ str(len(self.game.pastMoves)) + " moves")
-                self.result, playing=0, False
-                break
-            if self.game.isWin1(possMoves): #checks p1 wins
-                print("AI has won the Game in "+ str(len(self.game.pastMoves)) + " moves")
-                self.result, playing=1, False
-                break
-            elif len(self.game.pastMoves)>200: #draw
-                print("its a draw, 200 move limit exceeded")
-                self.result, playing=0.5, False
-                break
-            if self.game.turn==1: #If AI turn, AI =1 always
-                self.game.makeMove(self.ai.getMove(self.game, possMoves, 1))
-                self.handler.showboard(self.game)
-                continue
-            command=self.handler.askForMove(self.game, possMoves) # If player turn
-            if command=="end":
-                playing=False
-            else:
-                self.game.makeMove(command)
-                self.handler.showboard(self.game)
-
-class AIvAIGame():
-    def __init__(self,firstmove=0):
-        self.handler=UIhandler()
-        self.ai0=GameAI(2) #REMOVE hardcode part
-        self.ai1=GameAI(0) #REMOVE hardcode part
-        gameState={}
-        for sq in range(3):
-            for th in range(8):
-                gameState[(sq,th)]="."
-        self.game=MillGame(gameState,[], firstmove)
-        self.play()
-
-    def play(self):
-        playing=True
-        self.handler.showboard(self.game)
-        print()
-        while playing:
-            possMoves=self.game.getPossMoves()
-            if self.game.isWin0(possMoves): #checks p0 wins
-                print("AI0 won the Game in "+ str(len(self.game.pastMoves)) + " moves")
-                self.result, playing=0, False
-                break
-            if self.game.isWin1(possMoves): #checks p1 wins
-                print("AI1 has won the Game in "+ str(len(self.game.pastMoves)) + " moves")
-                self.result, playing=1, False
-                break
-            elif len(self.game.pastMoves)>200: #draw
-                print("its a draw, 200 move limit exceeded")
-                self.result, playing=0.5, False
-                break
-            if self.game.turn==0: #If AI0 turn 
-                self.game.makeMove(self.ai0.getMove(self.game, possMoves, 0))
-                self.handler.showboard(self.game)
-                print()
-            else: #if AI1 turn
-                self.game.makeMove(self.ai1.getMove(self.game, possMoves, 1))
-                self.handler.showboard(self.game)
-                print()
 
 class GameAI():
     def __init__(self, depthMode="optimized", score_double=10, score_mill=10, score_piece=10, score_conn=1): #mode: 0, 1, 2... , time_optimized
@@ -461,71 +257,145 @@ class GUI():
         self.winCenter=(self.WIN_WIDTH//2,self.WIN_HEIGHT//2)
         self.spotDict=self.makeSpotDict()
         self.win = pygame.display.set_mode((self.WIN_WIDTH, self.WIN_HEIGHT))
+        self.pressedButtons=defaultdict(lambda: False)
         pygame.display.set_caption("Nine Mens Morris")
         self.introLoop()
+        
         pygame.quit()
         sys.exit()
 
     def makeSpotDict(self): #creates dict with all the spots
+        self.boardCenter=(self.WIN_WIDTH//3,self.WIN_HEIGHT*4//7)
         dic={}
         for sq in range(3):
             for th in range(8):
                 if th==0:
-                    dic[(sq,th)]=(self.winCenter[0],self.winCenter[1]-self.unit*(3-sq))
+                    dic[(sq,th)]=(self.boardCenter[0],self.boardCenter[1]-self.unit*(3-sq))
                 elif th==1:
-                    dic[(sq,th)]=(self.winCenter[0]+self.unit*(3-sq),self.winCenter[1]-self.unit*(3-sq))
+                    dic[(sq,th)]=(self.boardCenter[0]+self.unit*(3-sq),self.boardCenter[1]-self.unit*(3-sq))
                 elif th==2:
-                    dic[(sq,th)]=(self.winCenter[0]+self.unit*(3-sq),self.winCenter[1])
+                    dic[(sq,th)]=(self.boardCenter[0]+self.unit*(3-sq),self.boardCenter[1])
                 elif th==3:
-                    dic[(sq,th)]=(self.winCenter[0]+self.unit*(3-sq),self.winCenter[1]+self.unit*(3-sq))
+                    dic[(sq,th)]=(self.boardCenter[0]+self.unit*(3-sq),self.boardCenter[1]+self.unit*(3-sq))
                 elif th==4:
-                    dic[(sq,th)]=(self.winCenter[0],self.winCenter[1]+self.unit*(3-sq))
+                    dic[(sq,th)]=(self.boardCenter[0],self.boardCenter[1]+self.unit*(3-sq))
                 elif th==5:
-                    dic[(sq,th)]=(self.winCenter[0]-self.unit*(3-sq),self.winCenter[1]+self.unit*(3-sq))
+                    dic[(sq,th)]=(self.boardCenter[0]-self.unit*(3-sq),self.boardCenter[1]+self.unit*(3-sq))
                 elif th==6:
-                    dic[(sq,th)]=(self.winCenter[0]-self.unit*(3-sq),self.winCenter[1])
+                    dic[(sq,th)]=(self.boardCenter[0]-self.unit*(3-sq),self.boardCenter[1])
                 elif th==7:
-                    dic[(sq,th)]=(self.winCenter[0]-self.unit*(3-sq),self.winCenter[1]-self.unit*(3-sq))
+                    dic[(sq,th)]=(self.boardCenter[0]-self.unit*(3-sq),self.boardCenter[1]-self.unit*(3-sq))
         return dic
 
     def introLoop(self): #loop for intro
+        self.mode="PvP"
         gameOn = True 
         while gameOn:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-            self.drawIntro()
+            self.win.fill((255,255,255))
+            self.createText("Welcome to Nine Mens Morris",self.WIN_WIDTH//2,self.WIN_HEIGHT*1//3,45,(0,0,0))
+            self.createButton("new", "New Game",180,350,150,70, (170,170,170), (140,140,140), 20, self.modeSelectLoop)
+            self.createButton("rules", "Rules",470,350,150,70, (170,170,170), (140,140,140), 20, self.rulesLoop)
+            #Add a ability to make custom game board
+            pygame.display.update()
+            self.clock.tick(60)
 
+        pygame.quit()
+        sys.exit()
+    
+    def rulesLoop(self):
+        pass#add code to write all the rules
+
+    def winLoop(self, winner):
+        gameOn = True 
+        while gameOn:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            self.win.fill((255,255,255))
+            if winner==0:
+                text, color= "Red has won the game!", (200,0,0)
+            elif winner==1:
+                text, color= "Blue has won the game!", (0,0,200)
+            else:
+                text, color= "200 moves made: it's a Draw!", (0,0,0)
+
+            self.drawBoard()
+            self.drawPieces()
+            self.createText(text,self.WIN_WIDTH//2,self.WIN_HEIGHT//7,35,color)
+            self.createButton( "again", "Play Again", 520,290,200,100, (170,170,170), (140,140,140), 23, self.introLoop)
+            pygame.display.update()
+            self.clock.tick(60)
+        return
+
+    def modeSelectLoop(self):
+        gameOn = True 
+        while gameOn:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            self.win.fill((255,255,255))
+            self.createText("Please select game mode",self.WIN_WIDTH//2,self.WIN_HEIGHT//4,45,(0,0,0))
+            self.createButton("back", "back", self.WIN_WIDTH-100,0,100,30, (170,170,170), (140,140,140), 20, self.introLoop)
+            self.createButton( "pvp", "Human vs. Human", 200,200,400,60, (170,170,170), (140,140,140), 20, self.playLoop, 0)
+            self.createButton("pvai","Human vs. Computer", 200,270,400,60, (170,170,170), (140,140,140), 20, self.aiDiffSelectLoop, "PvAI")
+            self.createButton("aivp","Computer vs. Human", 200,340,400,60, (170,170,170), (140,140,140), 20, self.aiDiffSelectLoop, "AIvP")
+            self.createButton("aivai", "Computer vs. Computer",  200,410,400,60, (170,170,170), (140,140,140), 20, self.aiDiffSelectLoop, "AIvAI")
             pygame.display.update()
             self.clock.tick(60)
         return
     
-    def drawIntro(self): #draws the intro screen
-        self.win.fill((255,255,255))
-        largeText = pygame.font.Font('freesansbold.ttf',45)
-        TextSurf, TextRect = self.text_objects("Welcome to Nine Mens Morris", largeText, (0,0,0))
-        TextRect.center = (self.WIN_WIDTH//2,self.WIN_HEIGHT*3//8)
+    def aiDiffSelectLoop(self, mode):
+        self.mode=mode
+        gameOn = True 
+        while gameOn:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            self.win.fill((255,255,255))
+            self.createText("Please select computer difficulty",self.WIN_WIDTH//2,self.WIN_HEIGHT//4,45,(0,0,0))
+            self.createButton("back", "back", self.WIN_WIDTH-100,0,100,30, (170,170,170), (140,140,140), 20, self.modeSelectLoop)
+            self.createButton( "easy", "Easy", 200,200,400,60, (170,170,170), (140,140,140), 20, self.playLoop, 0)
+            self.createButton("ok","Okay", 200,270,400,60, (170,170,170), (140,140,140), 20, self.playLoop, 1)
+            self.createButton("decent","Decent", 200,340,400,60, (170,170,170), (140,140,140), 20, self.playLoop, 2)
+            self.createButton("good", "Strong",  200,410,400,60, (170,170,170), (140,140,140), 20, self.playLoop, None)
+            pygame.display.update()
+            self.clock.tick(60)
+        return
+
+
+
+
+
+    def createText(self, text, x, y, size, color): #creates a line of text
+        font = pygame.font.Font('freesansbold.ttf',size)
+        TextSurf, TextRect = self.text_objects(text, font, color)
+        TextRect.center = (x,y)
         self.win.blit(TextSurf,TextRect)
-        self.createButton("PvP", 110,350,100,50, (170,170,170), (140,140,140), 20, self.playLoop)
-        self.createButton("PvAI", 270,350,100,50, (170,170,170), (140,140,140), 20, self.playLoop)
-        self.createButton("AIvP", 430,350,100,50, (170,170,170), (140,140,140), 20, self.playLoop)
-        self.createButton("AIvAI", 590,350,100,50, (170,170,170), (140,140,140), 20, self.playLoop)
-            
-    def createButton(self, text, left, top, width, height, inactiveColor, activeColor, fontSize, action=None): #creates a clickable button
+
+    def createButton(self, name, text, left, top, width, height, inactiveColor, activeColor, fontSize, action=None, arg=None): #creates a clickable button
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
-        font = pygame.font.Font('freesansbold.ttf', fontSize)
         if left<mouse[0]<left+width and top<mouse[1]<top+height:
             pygame.draw.rect(self.win, activeColor, (left,top,width,height)) #if mouse is over button
             if click[0]==1 and action!=None:
-                self.mode=text
-                action()
+                self.pressedButtons[name]=True
+            if click[0]==0 and action!=None and self.pressedButtons[name]==True:
+                self.pressedButtons[name]=False
+                if arg!=None:
+                    action(arg)
+                else:
+                    action()
         else:
             pygame.draw.rect(self.win, inactiveColor, (left,top,width,height))  #if mouse not over button
-        TextSurf, TextRect = self.text_objects(text, font, (0,0,0)) #draws button text
-        TextRect.center = (left+width//2, top+height//2)
-        self.win.blit(TextSurf,TextRect)
+            self.pressedButtons[name]=False
+        self.createText(text, left+width//2, top+height//2, fontSize, (0,0,0))#draw button
     
     def text_objects(self, text, font, color): #creates a pair for text objects
         textSurface = font.render(text, True, color)
@@ -558,11 +428,14 @@ class GUI():
                 if -self.unit//2<location[0]-mouse[0]<self.unit//2 and -self.unit//2<location[1]-mouse[1]<self.unit//2:
                     return possMove
             return False
-#188, 25, 255
+
         def drawPossSpots(a, spots):
             self.win.fill((255,255,255))
             self.drawBoard()
             self.drawPieces()
+            self.createButton("exit","Exit Game", self.WIN_WIDTH-150,0,150,30, (170,170,170), (140,140,140), 20, self.introLoop)
+            #add change ai diff button
+            #add change mode button
             for spot in spots:
                 occupant=self.game.gameState[spot]
                 if occupant==0: #red, 0
@@ -579,8 +452,9 @@ class GUI():
             possMoves=[move for move in possMoves if move[1]==placed]
             possSpots=[move[2] for move in possMoves]
             self.game.gameState[placed]=self.game.turn
-            self.mills=self.game.getMills(self.game.gameState)
             self.game.pieces=[self.game.getPieces(0),self.game.getPieces(1)] #SHOULD be optimized so you dont have to recalculate
+            self.game.mills=self.game.getMills(self.game.gameState)
+           
             while True: #wait loop
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -669,7 +543,7 @@ class GUI():
             possSpots=[move[3] for move in possMoves]
 
             self.game.gameState[end]=self.game.turn #makes sure 
-            self.mills=self.game.getMills(self.game.gameState)
+            self.game.mills=self.game.getMills(self.game.gameState)
             self.game.pieces=[self.game.getPieces(0),self.game.getPieces(1)]
 
             while True:
@@ -693,9 +567,12 @@ class GUI():
         else:
             return waitForMoveMoveStart(possMoves)
 
-    def playLoop(self):
+    def playLoop(self, aiDiff=None):
         self.startBlankGame()
-        self.ai=GameAI(0)
+        if aiDiff==None:
+            self.ai=GameAI()
+        else:
+            self.ai=GameAI(aiDiff)
         gameOn=True
         while gameOn:
             for event in pygame.event.get():
@@ -703,31 +580,21 @@ class GUI():
                     pygame.quit()
                     sys.exit()
             self.win.fill((255,255,255))
+
             self.drawBoard()
             self.drawPieces()
+            self.createButton("exit", "Exit Game", self.WIN_WIDTH-150,0,150,30, (170,170,170), (140,140,140), 20, self.introLoop)
 
             pygame.display.update()
             self.clock.tick(60)
 
             possMoves= self.game.getPossMoves()
-            if self.game.isWin0(possMoves): #checks p0 wins #NEED neater iswin
-                while True:
-                    for event in pygame.event.get(): 
-                        if event.type == pygame.QUIT:
-                            pygame.quit()
-                            sys.exit()
-            elif self.game.isWin1(possMoves): #checks p1 wins #NEED neater iswin
-                while True:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            pygame.quit()
-                            sys.exit()
-            elif len(self.game.pastMoves)>200: #draw #NEED neater isdraw
-                while True:
-                    for event in pygame.event.get(): ##
-                        if event.type == pygame.QUIT:
-                            pygame.quit()
-                            sys.exit()
+            if self.game.isWin0(possMoves): #checks p0 wins
+                self.winLoop(0)
+            elif self.game.isWin1(possMoves): #checks p1 wins 
+                self.winLoop(1)
+            elif len(self.game.pastMoves)>200: #draw 
+                self.winLoop(0.5)
             if self.game.turn==0:
                 if self.mode in {"AIvAI", "AIvP"}:
                     self.game.makeMove(self.ai.getMove(self.game, possMoves, self.game.turn))
@@ -756,14 +623,20 @@ class GUI():
         for piece in self.game.pieces[1]: #blue. player 1
             pygame.draw.circle(self.win, (0,0,255), self.spotDict[piece], 14)
 
+        for mill in self.game.mills:
+            if mill[0]==0: #red mill
+                pygame.draw.line(self.win, (255,0,0), self.spotDict[mill[1][0]], self.spotDict[mill[1][2]], 6)
+            else: #blue mill
+                pygame.draw.line(self.win, (0,0,255), self.spotDict[mill[1][0]], self.spotDict[mill[1][2]], 6)
 
 if __name__ == "__main__":
     # uncomment one of the following to play:
     # PvPGame()
     # PvAIGame() 
     GUI()
-    pass
-# TODO: reduce clutter, optimize heuristic (?), optimize depth function, add gui announcements
+
+# TODO general: reduce clutter; optimize heuristic (?); optimize depth function 
+# TODO GUI: add announcements that show 'red turn' or 'blue has won' or 'choose piece to remove'; when drawing board, connect mills; add new game option; allow to change mode mid-game; add ability to make custom game start, multithread the GUI and comp, add help page
 
 
 
