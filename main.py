@@ -1,3 +1,6 @@
+#VERSION 0.1.3
+
+
 from copy import deepcopy
 import random
 import pygame, sys
@@ -255,6 +258,7 @@ class GUI():
         self.WIN_WIDTH = 800
         self.WIN_HEIGHT = 600
         self.winCenter=(self.WIN_WIDTH//2,self.WIN_HEIGHT//2)
+        self.boardCenter=(self.WIN_WIDTH//3,self.WIN_HEIGHT*4//7)
         self.spotDict=self.makeSpotDict()
         self.win = pygame.display.set_mode((self.WIN_WIDTH, self.WIN_HEIGHT))
         self.pressedButtons=defaultdict(lambda: False)
@@ -292,7 +296,7 @@ class GUI():
                     pygame.quit()
                     sys.exit()
             self.win.fill((255,255,255))
-            self.createText("RULES HERE",self.WIN_WIDTH//2,self.WIN_HEIGHT//7,35,(0,0,0))
+            self.createText("Red always moves first.",self.WIN_WIDTH//2,self.WIN_HEIGHT//7,35,(0,0,0))
             self.createButton( "back", "back", 320,290,200,100, (170,170,170), (140,140,140), 23, self.loopReturn, loop)
             pygame.display.update()
             self.clock.tick(60)
@@ -537,7 +541,25 @@ class GUI():
         else:
             return waitForMoveMoveStart(possMoves)
     
-    def loopReturn(self, loop):
+    def aiDiffSelectLoop(self):
+        looping = True 
+        while looping:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            self.win.fill((255,255,255))
+            self.createText("Please select computer difficulty",self.WIN_WIDTH//2,self.WIN_HEIGHT//4,45,(0,0,0))
+            self.createButton("back", "back", self.WIN_WIDTH-100,0,100,30, (170,170,170), (140,140,140), 20, self.loopReturn, "mode_select")
+            self.createButton( "easy", "Easy", 200,200,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diff0")
+            self.createButton("ok", "Okay", 200,270,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diff1")
+            self.createButton("decent","Decent", 200,340,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diff2")
+            self.createButton("good", "Strong",  200,410,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diffOptimized")
+            pygame.display.update()
+            self.clock.tick(60)
+        return
+
+    def loopReturn(self, loop): #cotrols which loop to run
         if loop=="intro":
             self.introLoop()
         elif loop=="rules_from_intro":
@@ -574,28 +596,10 @@ class GUI():
         else:
             print("not a loop")
 
-    def aiDiffSelectLoop(self):
-        looping = True 
-        while looping:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-            self.win.fill((255,255,255))
-            self.createText("Please select computer difficulty",self.WIN_WIDTH//2,self.WIN_HEIGHT//4,45,(0,0,0))
-            self.createButton("back", "back", self.WIN_WIDTH-100,0,100,30, (170,170,170), (140,140,140), 20, self.loopReturn, "mode_select")
-            self.createButton( "easy", "Easy", 200,200,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diff0")
-            self.createButton("ok", "Okay", 200,270,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diff1")
-            self.createButton("decent","Decent", 200,340,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diff2")
-            self.createButton("good", "Strong",  200,410,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diffOptimized")
-            pygame.display.update()
-            self.clock.tick(60)
-        return
-
     #endLOOPS
+    #HELPERS
 
     def makeSpotDict(self): #creates dict with all the spots
-        self.boardCenter=(self.WIN_WIDTH//3,self.WIN_HEIGHT*4//7)
         dic={}
         for sq in range(3):
             for th in range(8):
@@ -616,14 +620,24 @@ class GUI():
                 elif th==7:
                     dic[(sq,th)]=(self.boardCenter[0]-self.unit*(3-sq),self.boardCenter[1]-self.unit*(3-sq))
         return dic
- 
+
+    def startBlankGame(self): #starts a blank game
+        gameState={}
+        for sq in range(3):
+            for th in range(8):
+                gameState[(sq,th)]="."
+        self.game=MillGame(gameState,[])
+
+    #endHELPERS
+    #CREATORS
+
     def createText(self, text, x, y, size, color): #creates a line of text
         font = pygame.font.Font('freesansbold.ttf',size)
         TextSurf, TextRect = self.text_objects(text, font, color)
         TextRect.center = (x,y)
         self.win.blit(TextSurf,TextRect)
 
-    def createButton(self, name, text, left, top, width, height, inactiveColor, activeColor, fontSize, action=None, arg=None): #creates a clickable button
+    def createButton(self, name, text, left, top, width, height, inactiveColor, activeColor, fontSize, action=None, arg=None): #creates a clickable button, calls action on release
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if left<mouse[0]<left+width and top<mouse[1]<top+height:
@@ -645,13 +659,9 @@ class GUI():
         textSurface = font.render(text, True, color)
         return textSurface, textSurface.get_rect()
     
-    def startBlankGame(self): #starts a blank game
-        gameState={}
-        for sq in range(3):
-            for th in range(8):
-                gameState[(sq,th)]="."
-        self.game=MillGame(gameState,[])
-  
+    #endCREATORS
+    #DRAWERS:
+
     def drawBoard(self): #draws the game board 
         for sq in range(3): #draws spots
             for th in range(8):
@@ -661,6 +671,8 @@ class GUI():
             end1=self.spotDict[triple[0]]
             end2=self.spotDict[triple[2]]
             pygame.draw.line(self.win, (100,100,100), end1, end2, 14)
+
+        self.drawKey() #clean up (?)
 
     def drawPieces(self, game): #draws the pieces of a given game
         for piece in game.pieces[0]: #red player 0
@@ -674,6 +686,25 @@ class GUI():
                 pygame.draw.line(self.win, (255,0,0), self.spotDict[mill[1][0]], self.spotDict[mill[1][2]], 6)
             else: #blue mill
                 pygame.draw.line(self.win, (0,0,255), self.spotDict[mill[1][0]], self.spotDict[mill[1][2]], 6)
+
+    def drawKey(self):
+        pygame.draw.circle(self.win, (100,100,100), (self.WIN_WIDTH*6//9,self.WIN_HEIGHT*4//7-40), 14)
+        pygame.draw.circle(self.win, (255,10,10), (self.WIN_WIDTH*6//9,self.WIN_HEIGHT*4//7-40), 10)
+        pygame.draw.circle(self.win, (100,100,100), (self.WIN_WIDTH*6//9,self.WIN_HEIGHT*4//7+20), 14)
+        pygame.draw.circle(self.win, (10,10,255), (self.WIN_WIDTH*6//9,self.WIN_HEIGHT*4//7+20), 10)
+        if self.mode in {"PvP", "PvAI"}:
+            text1="- Human  "
+        else:
+            text1="  - Computer"
+        if self.mode in {"PvP", "AIvP"}:
+            text2="- Human  "
+        else:
+            text2="  - Computer"
+            #if self.aiDiff==
+        self.createText(text1,self.WIN_WIDTH*6//9+70,self.WIN_HEIGHT*4//7-40,20,(0,0,0))
+        self.createText(text2,self.WIN_WIDTH*6//9+70,self.WIN_HEIGHT*4//7+20,20,(0,0,0))
+
+    #endDRAWERS
 
 if __name__ == "__main__":
     # uncomment one of the following to play:
