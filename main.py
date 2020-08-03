@@ -1,4 +1,4 @@
-#VERSION 0.1.7
+#VERSION 0.1.8
 
 
 from copy import deepcopy
@@ -282,7 +282,7 @@ class GUI():
         self.spotDict=self.makeSpotDict()
         self.win = pygame.display.set_mode((self.WIN_WIDTH, self.WIN_HEIGHT))
         self.pressedButtons=defaultdict(lambda: False)
-        self.highlighted={0: []} #highlighted spots based on number of moves
+        self.highlighted=defaultdict(list) #highlighted spots based on number of moves
         pygame.display.set_caption("Nine Mens Morris")
         self.introLoop()
         
@@ -373,15 +373,22 @@ class GUI():
                 self.winLoop(0.5)
             if self.game.turn==0:
                 if self.mode in {"AIvAI", "AIvP"}:
-                    self.game.makeMove(self.ai.getMove(self.game, possMoves, self.game.turn))
+                    move=self.ai.getMove(self.game, possMoves, self.game.turn)
+                    self.updateHighlighted(move)
+                    self.game.makeMove(move)
                 else:
-                    self.game.makeMove(self.waitForMoveLoop(possMoves))
+                    move=self.waitForMoveLoop(possMoves)
+                    self.updateHighlighted(move)
+                    self.game.makeMove(move)
             else: #turn =1
                 if self.mode in {"AIvAI", "PvAI"}:
-                    self.game.makeMove(self.ai.getMove(self.game, possMoves, self.game.turn))
+                    move=self.ai.getMove(self.game, possMoves, self.game.turn)
+                    self.updateHighlighted(move)
+                    self.game.makeMove(move)
                 else:
-                    self.game.makeMove(self.waitForMoveLoop(possMoves))
- 
+                    move=self.waitForMoveLoop(possMoves)
+                    self.updateHighlighted(move)
+                    self.game.makeMove(move)
     def modeSelectLoop(self):
         looping = True 
         while looping:
@@ -647,6 +654,17 @@ class GUI():
     #endLOOPS
     #HELPERS
 
+    def updateHighlighted(self, move):
+        if move[0]=="place":
+            self.highlighted[len(self.game.pastMoves)]=[move[1]]
+        elif move[0]=="placer":
+            self.highlighted[len(self.game.pastMoves)]=[move[1], move[2]]
+        elif move[0]=="move":
+            self.highlighted[len(self.game.pastMoves)]=[move[1], move[2]]
+        elif move[0]=="mover":
+            self.highlighted[len(self.game.pastMoves)]=[move[1], move[2], move[3]]
+
+
     def makeSpotDict(self): #creates dict with all the spots
         dic={}
         for sq in range(3):
@@ -739,6 +757,8 @@ class GUI():
                 pygame.draw.line(self.win, (255,0,0), self.spotDict[mill[1][0]], self.spotDict[mill[1][2]], 6)
             else: #blue mill
                 pygame.draw.line(self.win, (0,0,255), self.spotDict[mill[1][0]], self.spotDict[mill[1][2]], 6)
+            
+        self.drawSpotHighlights(self.highlighted[len(self.game.pastMoves)-1])
 
     def drawKey(self): #draws the key to the side of the game board
         pygame.draw.circle(self.win, (100,100,100), (self.WIN_WIDTH*6//9,self.WIN_HEIGHT*4//7-40), 14)
@@ -792,16 +812,16 @@ class GUI():
         for pair in [[(dims[0]+radius-1,dims[1]+radius-1),(dims[0]+radius-1,dims[1]+dims[3]-radius)],[(dims[0]+radius-1,dims[1]+radius-1),(dims[0]+dims[2]-radius,dims[1]+radius-1)],[(dims[0]+dims[2]-radius,dims[1]+radius-1),(dims[0]+dims[2]-radius,dims[1]+dims[3]-radius)],[(dims[0]+dims[2]-radius,dims[1]+dims[3]-radius),(dims[0]+radius-1,dims[1]+dims[3]-radius)]]:
             pygame.draw.line(win, color, pair[0], pair[1], radius*2)
 
-    # def drawSpotHighlights(self, spots):
-    #     for spot in spots:
-    #         pygame.draw.circle(self.win, (0,255,255), self.spotDict[spot], 1, 1)
+    def drawSpotHighlights(self, spots):
+        for spot in spots:
+            pygame.draw.circle(self.win, (255,255,0), self.spotDict[spot], 16, 2)
     #endCREATORS/DRAWERS
 
 if __name__ == "__main__":
     GUI()
 
 # TODO ai: reduce clutter; optimize heuristic (?); optimize depth function, make so that ai tries to win in less moves if it can
-# TODO GUI: add ability to make custom game start, multithread the GUI and comp, write help page, create drawEverything function, hint button, highlight last move
+# TODO GUI: add ability to make custom game start, multithread the GUI and comp, write help page, create drawEverything function, hint button, settings, animate moves
 
 
 
