@@ -1,4 +1,4 @@
-#VERSION 0.1.6
+#VERSION 0.1.7
 
 
 from copy import deepcopy
@@ -194,15 +194,15 @@ class GameAI():
             if gameLength==0:
                 return 0
             elif gameLength<10:
-                return 2
-            elif gameLength<18:
                 return 3
+            elif gameLength<18:
+                return 4
             else:
                 numMoves=len(possMoves)
                 if numMoves<10:
-                    return 3
+                    return 5
                 else:
-                    return 2
+                    return 4
 
     def minimax(self, game, depth, turn, possMoves, alpha, beta): #returns minimax score with alpha-beta pruning
         if game.isWin1(possMoves):
@@ -282,6 +282,7 @@ class GUI():
         self.spotDict=self.makeSpotDict()
         self.win = pygame.display.set_mode((self.WIN_WIDTH, self.WIN_HEIGHT))
         self.pressedButtons=defaultdict(lambda: False)
+        self.highlighted={0: []} #highlighted spots based on number of moves
         pygame.display.set_caption("Nine Mens Morris")
         self.introLoop()
         
@@ -675,7 +676,7 @@ class GUI():
                 gameState[(sq,th)]="."
         self.game=MillGame(gameState,[])
 
-    def undo(self):
+    def undo(self): #undos last move, does nothing if no previous move
         if self.mode=="PvP":
             self.game.undo()
         elif self.mode in {"PvAI", "AIvP"}:
@@ -713,7 +714,7 @@ class GUI():
         textSurface = font.render(text, True, color)
         return textSurface, textSurface.get_rect()
     
-    def drawBoard(self): #draws the game board 
+    def drawBoard(self): #draws the game board, key, and AI
         for sq in range(3): #draws spots
             for th in range(8):
                  pygame.draw.circle(self.win, (100,100,100), self.spotDict[(sq,th)], 20)
@@ -726,7 +727,7 @@ class GUI():
         self.drawKey() #clean up (?) with drawEverything fun
         self.drawAid() #^^^
 
-    def drawPieces(self, game): #draws the pieces of a given game
+    def drawPieces(self, game): #draws the pieces of a given game, also connects mills and highlights past moves
         for piece in game.pieces[0]: #red player 0
             pygame.draw.circle(self.win, (255,0,0), self.spotDict[piece], 14)
 
@@ -784,23 +785,23 @@ class GUI():
         if text:
             self.createText(text,self.WIN_WIDTH//2,self.WIN_HEIGHT//7,22, (0,0,0))
 
-    def drawRoundedRect(self, win, color, dims, radius): #dims: (left,top,width,height)
+    def drawRoundedRect(self, win, color, dims, radius): #draws a rounded rectangle; dims: (left,top,width,height)
         pygame.draw.rect(win, color, (dims[0]+radius, dims[1]+radius, dims[2]-2*radius, dims[3]-2*radius))
         for spot in [(dims[0]+radius,dims[1]+radius),(dims[0]+radius,dims[1]+dims[3]-radius),(dims[0]+dims[2]-radius,dims[1]+radius),(dims[0]+dims[2]-radius,dims[1]+dims[3]-radius)]:
             pygame.draw.circle(win, color, spot, radius)
         for pair in [[(dims[0]+radius-1,dims[1]+radius-1),(dims[0]+radius-1,dims[1]+dims[3]-radius)],[(dims[0]+radius-1,dims[1]+radius-1),(dims[0]+dims[2]-radius,dims[1]+radius-1)],[(dims[0]+dims[2]-radius,dims[1]+radius-1),(dims[0]+dims[2]-radius,dims[1]+dims[3]-radius)],[(dims[0]+dims[2]-radius,dims[1]+dims[3]-radius),(dims[0]+radius-1,dims[1]+dims[3]-radius)]]:
             pygame.draw.line(win, color, pair[0], pair[1], radius*2)
 
+    # def drawSpotHighlights(self, spots):
+    #     for spot in spots:
+    #         pygame.draw.circle(self.win, (0,255,255), self.spotDict[spot], 1, 1)
     #endCREATORS/DRAWERS
 
 if __name__ == "__main__":
-    # uncomment one of the following to play:
-    # PvPGame()
-    # PvAIGame() 
     GUI()
 
-# TODO general: reduce clutter; optimize heuristic (?); optimize depth function
-# TODO GUI: add ability to make custom game start, multithread the GUI and comp, write help page, create drawEverything function, hint button, button margins
+# TODO ai: reduce clutter; optimize heuristic (?); optimize depth function, make so that ai tries to win in less moves if it can
+# TODO GUI: add ability to make custom game start, multithread the GUI and comp, write help page, create drawEverything function, hint button, highlight last move
 
 
 
