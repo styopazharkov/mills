@@ -1,4 +1,6 @@
-#VERSION 0.1.8
+#VERSION 0.1.9
+#Author: Stepan (Styopa) Zharkov
+#Date: Aug 3, 2020
 
 
 from copy import deepcopy
@@ -288,7 +290,9 @@ class GUI():
         
         pygame.quit()
         sys.exit()
+    
     #LOOPS:
+
     def introLoop(self): #loop for intro
         self.mode="PvP"
         self.startBlankGame()
@@ -317,7 +321,8 @@ class GUI():
                     pygame.quit()
                     sys.exit()
             self.win.fill((255,255,255))
-            self.createText("Red always moves first.",self.WIN_WIDTH//2,self.WIN_HEIGHT//7,35,(0,0,0))
+            rulesText="Red always moves first."
+            self.createText(rulesText,self.WIN_WIDTH//2,self.WIN_HEIGHT//7,35,(0,0,0))
             self.createButton( "back", "back", 320,290,200,100, (170,170,170), (140,140,140), 23, self.loopReturn, loop)
             pygame.display.update()
             self.clock.tick(60)
