@@ -1,4 +1,4 @@
-#VERSION 0.1.4
+#VERSION 0.1.5
 
 
 from copy import deepcopy
@@ -272,6 +272,7 @@ class GameAI():
 class GUI():
     def __init__(self):
         pygame.init()
+        self.aidStatus=""
         self.clock = pygame.time.Clock()
         self.unit=60
         self.WIN_WIDTH = 800
@@ -322,6 +323,7 @@ class GUI():
         return
 
     def winLoop(self, winner):
+        self.aidStatus=""
         gameOn = True 
         while gameOn:
             for event in pygame.event.get():
@@ -351,8 +353,8 @@ class GUI():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+            self.aidStatus="thinking"
             self.win.fill((255,255,255))
-
             self.drawBoard()
             self.drawPieces(self.game)
             self.createButton("exit", "Exit Game", self.WIN_WIDTH-150,0,150,30, (170,170,170), (140,140,140), 20, self.loopReturn, "intro")
@@ -448,7 +450,10 @@ class GUI():
             temp_game.gameState[placed]=temp_game.turn
             temp_game.pieces=[temp_game.getPieces(0),temp_game.getPieces(1)] #SHOULD be optimized so you dont have to recalculate
             temp_game.mills=temp_game.getMills(temp_game.gameState)
-           
+            if temp_game.turn==0:
+                self.aidStatus="rplacer"
+            else: #turn=1, blue
+                self.aidStatus="bplacer"
             while True: #wait loop
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -468,6 +473,10 @@ class GUI():
         def waitForPlaceMove(possMoves): #waits until a move is made that places a peice. returns the move is it is 'place' type. calls waitForPl
             a, colorTrend=100, "+"
             possSpots=[move[1] for move in possMoves]
+            if temp_game.turn==0:
+                self.aidStatus="rplace"
+            else: #turn=1, blue
+                self.aidStatus="bplace"
             while True:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -490,6 +499,10 @@ class GUI():
         def waitForMoveMoveStart(possMoves): #waits until a start spot is selected during the moving phase
             a, colorTrend=100, "+"
             possSpots=[move[1] for move in possMoves]
+            if temp_game.turn==0:
+                self.aidStatus="rstartmove"
+            else: #turn=1, blue
+                self.aidStatus="bstartmove"
             while True:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -511,6 +524,10 @@ class GUI():
             possMoves=[move for move in possMoves if move[1]==start]
             possSpots=[move[2] for move in possMoves]
 
+            if temp_game.turn==0:
+                self.aidStatus="rendmove"
+            else: #turn=1, blue
+                self.aidStatus="bendmove"
             temp_game.gameState[start]="." #NEED to add so that start spot is 'selected' somehow
             while True:
                 for event in pygame.event.get():
@@ -539,6 +556,11 @@ class GUI():
             temp_game.gameState[end]=temp_game.turn #makes sure 
             temp_game.mills=temp_game.getMills(temp_game.gameState)
             temp_game.pieces=[temp_game.getPieces(0),temp_game.getPieces(1)]
+
+            if temp_game.turn==0:
+                self.aidStatus="rmover"
+            else: #turn=1, blue
+                self.aidStatus="bmover"
 
             while True:
                 for event in pygame.event.get():
@@ -660,7 +682,7 @@ class GUI():
             self.game.undo()
 
     #endHELPERS
-    #CREATORS
+    #CREATORS/DRAWERS
 
     def createText(self, text, x, y, size, color): #creates a line of text
         font = pygame.font.Font('freesansbold.ttf',size)
@@ -690,9 +712,6 @@ class GUI():
         textSurface = font.render(text, True, color)
         return textSurface, textSurface.get_rect()
     
-    #endCREATORS
-    #DRAWERS:
-
     def drawBoard(self): #draws the game board 
         for sq in range(3): #draws spots
             for th in range(8):
@@ -703,7 +722,8 @@ class GUI():
             end2=self.spotDict[triple[2]]
             pygame.draw.line(self.win, (100,100,100), end1, end2, 14)
 
-        self.drawKey() #clean up (?)
+        self.drawKey() #clean up (?) with drawEverything fun
+        self.drawAid() #^^^
 
     def drawPieces(self, game): #draws the pieces of a given game
         for piece in game.pieces[0]: #red player 0
@@ -718,7 +738,7 @@ class GUI():
             else: #blue mill
                 pygame.draw.line(self.win, (0,0,255), self.spotDict[mill[1][0]], self.spotDict[mill[1][2]], 6)
 
-    def drawKey(self):
+    def drawKey(self): #draws the key to the side of the game board
         pygame.draw.circle(self.win, (100,100,100), (self.WIN_WIDTH*6//9,self.WIN_HEIGHT*4//7-40), 14)
         pygame.draw.circle(self.win, (255,10,10), (self.WIN_WIDTH*6//9,self.WIN_HEIGHT*4//7-40), 10)
         pygame.draw.circle(self.win, (100,100,100), (self.WIN_WIDTH*6//9,self.WIN_HEIGHT*4//7+20), 14)
@@ -735,7 +755,36 @@ class GUI():
         self.createText(text1,self.WIN_WIDTH*6//9+70,self.WIN_HEIGHT*4//7-40,20,(0,0,0))
         self.createText(text2,self.WIN_WIDTH*6//9+70,self.WIN_HEIGHT*4//7+20,20,(0,0,0))
 
-    #endDRAWERS
+    def drawAid(self): #draws text above the board that helps 
+        
+        text=""
+        if self.aidStatus=="thinking":
+            text = "Computer thinking..."
+        elif self.aidStatus=="rplace":
+            text = "Red's turn: select a spot"
+        elif self.aidStatus=="bplace":
+            text = "Blue's turn: select a spot"
+        elif self.aidStatus=="rplacer":
+            text = "Reds's turn: select a blue piece to remove"
+        elif self.aidStatus=="bplacer":
+            text = "Blue's turn: select a red piece to remove"
+        elif self.aidStatus=="rstartmove":
+            text = "Red's turn: select a piece to move"
+        elif self.aidStatus=="bstartmove":
+            text = "Blue's turn: select a piece to move"
+        elif self.aidStatus=="rendmove":
+            text = "Reds's turn: select a spot to move to"
+        elif self.aidStatus=="bendmove":
+            text = "Blue's turn: select a spot to move to"
+        elif self.aidStatus=="rmover":
+            text = "Reds's turn: select a blue piece to remove"
+        elif self.aidStatus=="bmover":
+            text = "Blue's turn: select a red piece to remove"
+        if text:
+            self.createText(text,self.WIN_WIDTH//2,self.WIN_HEIGHT//7,22, (0,0,0))
+
+
+    #endCREATORS/DRAWERS
 
 if __name__ == "__main__":
     # uncomment one of the following to play:
@@ -744,7 +793,7 @@ if __name__ == "__main__":
     GUI()
 
 # TODO general: reduce clutter; optimize heuristic (?); optimize depth function, undo button
-# TODO GUI: add announcements that show 'red turn' or 'blue has won' or 'choose piece to remove'; add ability to make custom game start, multithread the GUI and comp, add help page, create drawEverything function, undo button
+# TODO GUI: add ability to make custom game start, multithread the GUI and comp, write help page, create drawEverything function, hint button
 
 
 
