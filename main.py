@@ -1,4 +1,4 @@
-#VERSION 0.1.5
+#VERSION 0.1.6
 
 
 from copy import deepcopy
@@ -357,7 +357,8 @@ class GUI():
             self.win.fill((255,255,255))
             self.drawBoard()
             self.drawPieces(self.game)
-            self.createButton("exit", "Exit Game", self.WIN_WIDTH-150,0,150,30, (170,170,170), (140,140,140), 20, self.loopReturn, "intro")
+
+            #create threads for buttons while ai is thinking
 
             pygame.display.update()
             self.clock.tick(60)
@@ -423,13 +424,13 @@ class GUI():
             self.win.fill((255,255,255))
             self.drawBoard()
             self.drawPieces(temp_game)
-            self.createButton("exit","Exit Game", self.WIN_WIDTH-120,0,120,30, (170,170,170), (140,140,140), 20, self.loopReturn, "intro")
-            self.createButton("rules","Rules", self.WIN_WIDTH//2-50,0,100,20, (170,170,170), (140,140,140), 20, self.loopReturn, "rules_from_move")
-            self.createButton("chmod","Change Mode", 0,0,145,30, (170,170,170), (140,140,140), 20, self.loopReturn, "mode_select")
+            self.createButton("exit","Exit Game", self.WIN_WIDTH-125,5,120,30, (170,170,170), (140,140,140), 20, self.loopReturn, "intro")
+            self.createButton("rules","Rules", self.WIN_WIDTH//2-50,5,100,20, (170,170,170), (140,140,140), 15, self.loopReturn, "rules_from_move")
+            self.createButton("chmod","Change Mode", 5,5,145,30, (170,170,170), (140,140,140), 20, self.loopReturn, "mode_select")
             if self.mode!="PvP":
-                self.createButton("chdiff","Change Difficulty", 150,0,185,30, (170,170,170), (140,140,140), 20, self.loopReturn, "ai_select")
+                self.createButton("chdiff","Change Difficulty", 155,5,185,30, (170,170,170), (140,140,140), 20, self.loopReturn, "ai_select")
             if self.mode!="AIvAI":
-                self.createButton("undo","Undo", self.WIN_WIDTH-200,0,75,30, (170,170,170), (140,140,140), 20, self.loopReturn, "undo")
+                self.createButton("undo","Undo", self.WIN_WIDTH-205,5,75,30, (170,170,170), (140,140,140), 20, self.loopReturn, "undo")
             #add change ai diff button
             #add change mode button
             for spot in spots:
@@ -694,7 +695,7 @@ class GUI():
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if left<mouse[0]<left+width and top<mouse[1]<top+height:
-            pygame.draw.rect(self.win, activeColor, (left,top,width,height)) #if mouse is over button
+            self.drawRoundedRect(self.win, activeColor, (left,top,width,height), 7) #if mouse is over button
             if click[0]==1 and action!=None:
                 self.pressedButtons[name]=True
             if click[0]==0 and action!=None and self.pressedButtons[name]==True:
@@ -704,7 +705,7 @@ class GUI():
                 else:
                     action()
         else:
-            pygame.draw.rect(self.win, inactiveColor, (left,top,width,height))  #if mouse not over button
+            self.drawRoundedRect(self.win, inactiveColor, (left,top,width,height),7)  #if mouse not over button
             self.pressedButtons[name]=False
         self.createText(text, left+width//2, top+height//2, fontSize, (0,0,0))#draw button
     
@@ -783,6 +784,12 @@ class GUI():
         if text:
             self.createText(text,self.WIN_WIDTH//2,self.WIN_HEIGHT//7,22, (0,0,0))
 
+    def drawRoundedRect(self, win, color, dims, radius): #dims: (left,top,width,height)
+        pygame.draw.rect(win, color, (dims[0]+radius, dims[1]+radius, dims[2]-2*radius, dims[3]-2*radius))
+        for spot in [(dims[0]+radius,dims[1]+radius),(dims[0]+radius,dims[1]+dims[3]-radius),(dims[0]+dims[2]-radius,dims[1]+radius),(dims[0]+dims[2]-radius,dims[1]+dims[3]-radius)]:
+            pygame.draw.circle(win, color, spot, radius)
+        for pair in [[(dims[0]+radius-1,dims[1]+radius-1),(dims[0]+radius-1,dims[1]+dims[3]-radius)],[(dims[0]+radius-1,dims[1]+radius-1),(dims[0]+dims[2]-radius,dims[1]+radius-1)],[(dims[0]+dims[2]-radius,dims[1]+radius-1),(dims[0]+dims[2]-radius,dims[1]+dims[3]-radius)],[(dims[0]+dims[2]-radius,dims[1]+dims[3]-radius),(dims[0]+radius-1,dims[1]+dims[3]-radius)]]:
+            pygame.draw.line(win, color, pair[0], pair[1], radius*2)
 
     #endCREATORS/DRAWERS
 
@@ -792,8 +799,8 @@ if __name__ == "__main__":
     # PvAIGame() 
     GUI()
 
-# TODO general: reduce clutter; optimize heuristic (?); optimize depth function, undo button
-# TODO GUI: add ability to make custom game start, multithread the GUI and comp, write help page, create drawEverything function, hint button
+# TODO general: reduce clutter; optimize heuristic (?); optimize depth function
+# TODO GUI: add ability to make custom game start, multithread the GUI and comp, write help page, create drawEverything function, hint button, button margins
 
 
 
