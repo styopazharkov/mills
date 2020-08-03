@@ -1,4 +1,4 @@
-#VERSION 0.1.3
+#VERSION 0.1.4
 
 
 from copy import deepcopy
@@ -58,7 +58,26 @@ class MillGame():
         self.mills=self.getMills(self.gameState) #MAYBE could be optimized so you dont have to recalculate
         self.pieces=[self.getPieces(0),self.getPieces(1)] #SHOULD be optimized so you dont have to recalculate
         self.turn=self.enemy(self.turn)
-        
+    
+    def undo(self):
+        if self.pastMoves:
+            previousMove=self.pastMoves.pop()
+            self.turn=self.enemy(self.turn)
+            if previousMove[0]=="place":
+                self.gameState[previousMove[1]]="."
+            elif previousMove[0]=="placer":#["placer", piece, removable]
+                self.gameState[previousMove[2]]=self.enemy(self.turn)
+                self.gameState[previousMove[1]]="."
+            elif previousMove[0]=="move":#["move", piece, neighbor]
+                self.gameState[previousMove[2]]="."
+                self.gameState[previousMove[1]]=self.turn
+            elif previousMove[0]=="mover":#["mover", piece, neighbor, removable]
+                self.gameState[previousMove[1]]=self.turn
+                self.gameState[previousMove[2]]="."
+                self.gameState[previousMove[3]]=self.enemy(self.turn)
+            self.mills=self.getMills(self.gameState) #MAYBE could be optimized so you dont have to recalculate
+            self.pieces=[self.getPieces(0),self.getPieces(1)] #SHOULD be optimized so you dont have to recalculate
+
     def getRemovables(self, turn): #given a player, returns all enemy pieces that can be removed
         removables=[]
         enemyPieces=self.pieces[self.enemy(turn)]
@@ -320,7 +339,7 @@ class GUI():
             self.drawBoard()
             self.drawPieces(self.game)
             self.createText(text,self.WIN_WIDTH//2,self.WIN_HEIGHT//7,35,color)
-            self.createButton( "again", "Play Again", 520,290,200,100, (170,170,170), (140,140,140), 23, self.loopReturn, "intro")
+            self.createButton( "again", "Play Again", 520,450,200,50, (170,170,170), (140,140,140), 23, self.loopReturn, "intro")
             pygame.display.update()
             self.clock.tick(60)
         return
@@ -407,6 +426,8 @@ class GUI():
             self.createButton("chmod","Change Mode", 0,0,145,30, (170,170,170), (140,140,140), 20, self.loopReturn, "mode_select")
             if self.mode!="PvP":
                 self.createButton("chdiff","Change Difficulty", 150,0,185,30, (170,170,170), (140,140,140), 20, self.loopReturn, "ai_select")
+            if self.mode!="AIvAI":
+                self.createButton("undo","Undo", self.WIN_WIDTH-200,0,75,30, (170,170,170), (140,140,140), 20, self.loopReturn, "undo")
             #add change ai diff button
             #add change mode button
             for spot in spots:
@@ -593,8 +614,11 @@ class GUI():
             self.playLoop()
         elif loop=="play":
             self.playLoop()
+        elif loop=="undo":
+            self.undo()
+            self.playLoop()
         else:
-            print("not a loop")
+            print("ERROR: not a loop")
 
     #endLOOPS
     #HELPERS
@@ -627,6 +651,13 @@ class GUI():
             for th in range(8):
                 gameState[(sq,th)]="."
         self.game=MillGame(gameState,[])
+
+    def undo(self):
+        if self.mode=="PvP":
+            self.game.undo()
+        elif self.mode in {"PvAI", "AIvP"}:
+            self.game.undo()
+            self.game.undo()
 
     #endHELPERS
     #CREATORS
@@ -700,7 +731,7 @@ class GUI():
             text2="- Human  "
         else:
             text2="  - Computer"
-            #if self.aiDiff==
+            #show the ai difficulty
         self.createText(text1,self.WIN_WIDTH*6//9+70,self.WIN_HEIGHT*4//7-40,20,(0,0,0))
         self.createText(text2,self.WIN_WIDTH*6//9+70,self.WIN_HEIGHT*4//7+20,20,(0,0,0))
 
@@ -712,8 +743,8 @@ if __name__ == "__main__":
     # PvAIGame() 
     GUI()
 
-# TODO general: reduce clutter; optimize heuristic (?); optimize depth function 
-# TODO GUI: add announcements that show 'red turn' or 'blue has won' or 'choose piece to remove'; when drawing board, connect mills; add new game option; allow to change mode mid-game; add ability to make custom game start, multithread the GUI and comp, add help page
+# TODO general: reduce clutter; optimize heuristic (?); optimize depth function, undo button
+# TODO GUI: add announcements that show 'red turn' or 'blue has won' or 'choose piece to remove'; add ability to make custom game start, multithread the GUI and comp, add help page, create drawEverything function, undo button
 
 
 
