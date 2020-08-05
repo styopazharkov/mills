@@ -1,4 +1,4 @@
-#VERSION 0.1.8
+#VERSION 0.1.10
 
 
 from copy import deepcopy
@@ -398,7 +398,7 @@ class GUI():
                     sys.exit()
             self.win.fill((255,255,255))
             self.createText("Please select game mode",self.WIN_WIDTH//2,self.WIN_HEIGHT//4,45,(0,0,0))
-            self.createButton("back", "back", self.WIN_WIDTH-100,0,100,30, (170,170,170), (140,140,140), 20, self.loopReturn, "intro")
+            self.createButton("back", "Exit", self.WIN_WIDTH-105,5,100,30, (170,170,170), (140,140,140), 20, self.loopReturn, "intro")
             self.createButton( "pvp", "Human vs. Human", 200,200,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play")
             self.createButton("pvai","Human vs. Computer", 200,270,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "ai_select_in_pvai")
             self.createButton("aivp","Computer vs. Human", 200,340,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "ai_select_in_aivp")
@@ -602,7 +602,7 @@ class GUI():
                     sys.exit()
             self.win.fill((255,255,255))
             self.createText("Please select computer difficulty",self.WIN_WIDTH//2,self.WIN_HEIGHT//4,45,(0,0,0))
-            self.createButton("back", "back", self.WIN_WIDTH-100,0,100,30, (170,170,170), (140,140,140), 20, self.loopReturn, "mode_select")
+            self.createButton("back", "Mode Select", self.WIN_WIDTH-145,5,140,30, (170,170,170), (140,140,140), 20, self.loopReturn, "mode_select")
             self.createButton( "easy", "Easy", 200,200,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diff0")
             self.createButton("ok", "Okay", 200,270,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diff1")
             self.createButton("decent","Decent", 200,340,400,60, (170,170,170), (140,140,140), 20, self.loopReturn, "play_in_diff2")
