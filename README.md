@@ -1,5 +1,5 @@
-# mills
-AI for the game of Mills/ Nine men Morris
+# Mills and Mancala AI
+AI for the game of Mills(Nine men Morris) and Mancala
 
 **Algorithm**
 
